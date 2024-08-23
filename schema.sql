@@ -18,11 +18,16 @@ create table if not exists patch
     description      text        not null,
     name             TEXT                 default null,
     original_name    TEXT                 default null,
+    edited_name      TEXT                 default null,
     infobox          TEXT                 default null,
     original_infobox TEXT                 default null,
+    edited_infobox   TEXT                 default null,
     summary          TEXT                 default null,
     original_summary TEXT                 default null,
+    edited_summary   TEXT                 default null,
     nsfw             bool                 default null,
+    edited_nsfw      bool                 default null,
+    edited_reason    TEXT                 default null,
     created_at       timestamptz not null default current_timestamp,
     updated_at       timestamptz not null default current_timestamp,
     deleted_at       timestamptz          default null
@@ -40,6 +45,17 @@ alter table patch
 
 alter table patch
     ALTER column original_name set default '';
+    
+alter table patch
+    add column edited_name TEXT;
+alter table patch
+    add column edited_infobox TEXT;
+alter table patch
+    add column edited_summary TEXT;
+alter table patch
+    add column edited_nsfw bool;
+alter table patch
+    add column edited_reason varchar(255);
 
 update patch
 set original_name = ''
