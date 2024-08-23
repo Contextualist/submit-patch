@@ -31,11 +31,20 @@ class Patch(PatchBase):
 
     name: str | None
     original_name: str
+    edited_name: str | None
     infobox: str | None
     original_infobox: str | None
+    edited_infobox: str | None
     summary: str | None
     original_summary: str | None
+    edited_summary: str | None
     nsfw: bool | None
+    edited_nsfw: bool | None
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None
+    reject_reason: str
+    edited_reason: str | None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

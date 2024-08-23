@@ -37,6 +37,11 @@ class React(str, enum.Enum):
 class ReviewPatch:
     react: React
     reject_reason: str = ""
+    edited_name: str = ""
+    edited_infobox: str = ""
+    edited_summary: str = ""
+    edited_nsfw: bool = False
+    edited_reason: str = ""
 
 
 def _strip_none(d: dict[str, Any]) -> dict[str, Any]:
@@ -67,7 +72,7 @@ async def review_patch(
                 return await __reject_patch(patch, conn, request.auth, data.reject_reason)
 
             if data.react == React.Accept:
-                return await __accept_patch(patch, conn, request.auth)
+                return await __accept_patch(patch, conn, request.auth, data)
 
     raise NotAuthorizedException("暂不支持")
 
@@ -93,16 +98,18 @@ async def __reject_patch(
     return Redirect("/")
 
 
-async def __accept_patch(patch: Patch, conn: PoolConnectionProxy[Record], auth: User) -> Redirect:
+async def __accept_patch(
+    patch: Patch, conn: PoolConnectionProxy[Record], auth: User, review: ReviewPatch
+) -> Redirect:
     if not auth.is_access_token_fresh():
         return Redirect("/login")
 
     subject = _strip_none(
         {
-            "infobox": patch.infobox,
-            "name": patch.name,
-            "summary": patch.summary,
-            "nsfw": patch.nsfw,
+            "infobox": review.edited_infobox,
+            "name": review.edited_name,
+            "summary": review.edited_summary,
+            "nsfw": review.edited_nsfw,
         }
     )
 
@@ -149,11 +156,21 @@ async def __accept_patch(patch: Patch, conn: PoolConnectionProxy[Record], auth: 
                     state = $1,
                     wiki_user_id = $2,
                     updated_at = $3
-                where id = $4 and deleted_at is NULL
+                    edited_name = $4,
+                    edited_infobox = $5,
+                    edited_summary = $6,
+                    edited_nsfw = $7,
+                    edited_reason = $8
+                where id = $9 and deleted_at is NULL
                 """,
         PatchState.Accept,
         auth.user_id,
         datetime.now(tz=UTC),
+        (review.edited_name if review.edited_name != patch.name else None),
+        (review.edited_infobox if review.edited_infobox != patch.infobox else None),
+        (review.edited_summary if review.edited_summary != patch.summary else None),
+        (review.edited_nsfw if review.edited_nsfw != patch.nsfw else None),
+        (review.edited_reason if review.edited_reason else None),
         patch.id,
     )
     return Redirect(f"/patch/{patch.id}")

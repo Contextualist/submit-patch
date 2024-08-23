@@ -30,9 +30,15 @@ async def get_patch(patch_id: uuid.UUID, request: Request) -> Template:
     summary_patch = __try_diff(patch_id, patch.original_summary, patch.summary, "summary")
 
     reviewer = None
+    edited = dict(name_patch="", infobox_patch="", summary_patch="")
     if patch.state != PatchState.Pending:
         reviewer = await pg.fetchrow(
             "select * from patch_users where user_id=$1", patch.wiki_user_id
+        )
+        edited = dict(
+            name_patch=__try_diff(patch_id, patch.name, patch.edited_name, "name"),
+            infobox_patch=__try_diff(patch_id, patch.infobox, patch.edited_infobox, "infobox", n=5),
+            summary_patch=__try_diff(patch_id, patch.summary, patch.edited_summary, "summary"),
         )
 
     submitter = await pg.fetchrow("select * from patch_users where user_id=$1", patch.from_user_id)
@@ -41,6 +47,7 @@ async def get_patch(patch_id: uuid.UUID, request: Request) -> Template:
         "patch.html.jinja2",
         context={
             "patch": p,
+            "edited": edited,
             "auth": request.auth,
             "name_patch": name_patch,
             "infobox_patch": infobox_patch,

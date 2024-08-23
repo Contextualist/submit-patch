@@ -86,6 +86,35 @@
                         {{ csrf_input | safe }}
                         <input name="react" value="accept" hidden="hidden"/>
                         <button type="submit" class="btn btn-success">Accept</button>
+                        <details>
+                            <summary>附加修改</summary>
+                            <div class="form-group">
+                                <label for="edited_name">条目名称</label>
+                                <input class="form-control" id="edited_name" name="edited_name" value="{{ patch.name }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edited_infobox">Infobox</label>
+                                <textarea rows="15" class="form-control" id="edited_infobox"
+                                          name="edited_infobox">{{ patch.infobox }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="edited_summary">简介</label>
+                                <textarea rows="10" class="form-control" id="edited_summary"
+                                          name="edited_summary">{{ patch.summary }}</textarea>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="edited_nsfw" class="form-check-input"
+                                        {% if patch.nsfw %}
+                                       checked
+                                        {% endif %}
+                                       id="edited_nsfw">
+                                <label class="form-check-label" for="edited_nsfw">NSFW</label>
+                            </div>
+                            <div class="form-group">
+                                <label for="edited_reason">修改意见</label>
+                                <input class="form-control" id="edited_reason" name="edited_reason"/>
+                            </div>
+                        </details>
                     </form>
                 </div>
 
@@ -141,6 +170,51 @@
                     <span class="badge bg-success"> 接受 </span>
                 </h2>
             </div>
+
+            {% if patch.edited_reason or edited.name_patch or edited.infobox_patch or edited.summary_patch or patch.edited_nsfw is not none %}
+                {% if patch.edited_reason %}
+                    <div class="row">
+                        <h3>审核反馈</h3>
+                        <blockquote class="blockquote" style="background-color: #f7f7f9">
+                            <p class="mb-0"
+                               style="overflow: visible; overflow-wrap: anywhere;">
+                                {{ patch.edited_reason }}
+                            </p>
+                        </blockquote>
+                    </div>
+                {% endif %}
+
+                <h3>附加修改</h3>
+
+                {% if edited.name_patch %}
+                    <div class="row">
+                        <div id="editedNameDiffElement" class="diff"></div>
+                    </div>
+                {% endif %}
+
+                {% if edited.infobox_patch %}
+                    <div class="row">
+                        <div id="editedInfoboxDiffElement" class="diff"></div>
+                    </div>
+                {% endif %}
+
+                {% if edited.summary_patch %}
+                    <div class="row">
+                        <div id="editedSummaryDiffElement" class="diff"></div>
+                    </div>
+                {% endif %}
+
+                {% if patch.edited_nsfw is not none %}
+                    <div class="row">
+                        {% if patch.edited_nsfw %}
+                            <p>NSFW: ❌ -> ✅</p>
+                        {% else %}
+                            <p>NSFW: ✅ -> ❌ </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+
         {% elif patch.state == 2 %}
             <hr>
             <div class="col">
@@ -227,4 +301,72 @@
             })()
         </script>
     {% endif %}
+
+    {% if edited.name_patch %}
+        <script>
+            (() => {
+                const diffString = {{ edited.name_patch | tojson }};
+                const targetElement = document.getElementById('editedNameDiffElement');
+                const configuration = {
+                    drawFileList: false,
+                    fileListToggle: false,
+                    fileListStartVisible: false,
+                    fileContentToggle: false,
+                    maxLineSizeInBlockForComparison: 80,
+                    matching: 'words',
+                    outputFormat: 'line-by-line',
+                    synchronisedScroll: true,
+                    renderNothingWhenEmpty: false,
+                };
+                const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+                diff2htmlUi.draw();
+            })()
+        </script>
+    {% endif %}
+
+    {% if edited.infobox_patch %}
+        <script>
+            (() => {
+                const diffString = {{ edited.infobox_patch | tojson }};
+                const targetElement = document.getElementById('editedInfoboxDiffElement');
+                const configuration = {
+                    drawFileList: false,
+                    fileListToggle: false,
+                    fileListStartVisible: false,
+                    fileContentToggle: false,
+                    matching: 'lines',
+                    maxLineSizeInBlockForComparison: 80,
+                    {#outputFormat: 'side-by-side',#}
+                    outputFormat: 'line-by-line',
+                    synchronisedScroll: true,
+                    renderNothingWhenEmpty: false,
+                };
+                const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+                diff2htmlUi.draw();
+            })()
+        </script>
+    {% endif %}
+
+    {% if edited.summary_patch %}
+        <script>
+            (() => {
+                const diffString = {{ edited.summary_patch | tojson }};
+                const targetElement = document.getElementById('editedSummaryDiffElement');
+                const configuration = {
+                    drawFileList: false,
+                    fileListToggle: false,
+                    fileListStartVisible: false,
+                    maxLineSizeInBlockForComparison: 80,
+                    fileContentToggle: false,
+                    matching: 'lines',
+                    outputFormat: 'line-by-line',
+                    synchronisedScroll: true,
+                    renderNothingWhenEmpty: false,
+                };
+                const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+                diff2htmlUi.draw();
+            })()
+        </script>
+    {% endif %}
+
 {% endblock %}
