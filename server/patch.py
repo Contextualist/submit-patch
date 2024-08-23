@@ -1,5 +1,6 @@
 import difflib
 import uuid
+from typing import Any
 
 import litestar
 from litestar.exceptions import InternalServerException, NotFoundException
@@ -59,7 +60,7 @@ async def get_patch(patch_id: uuid.UUID, request: Request) -> Template:
 
 
 def __try_diff(
-    patch_id: uuid.UUID, before: str | None, after: str | None, name: str, **kwargs
+    patch_id: uuid.UUID, before: str | None, after: str | None, name: str, **kwargs: Any
 ) -> str:
     if after is None:
         return ""
