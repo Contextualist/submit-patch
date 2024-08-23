@@ -25,41 +25,9 @@ async def get_patch(patch_id: uuid.UUID, request: Request) -> Template:
 
     patch = Patch(**p)
 
-    name_patch = ""
-    if patch.name is not None:
-        name_patch = "".join(
-            difflib.unified_diff([patch.original_name + "\n"], [patch.name + "\n"], "name", "name")
-        )
-
-    infobox_patch = ""
-    if patch.infobox is not None:
-        if patch.original_infobox is None:
-            logger.error("broken patch {!r}", patch_id)
-            raise InternalServerException
-        infobox_patch = "".join(
-            difflib.unified_diff(
-                (patch.original_infobox + "\n").splitlines(True),
-                (patch.infobox + "\n").splitlines(True),
-                "infobox",
-                "infobox",
-                n=5,
-            )
-        )
-
-    summary_patch = ""
-    if patch.summary is not None:
-        if patch.original_summary is None:
-            logger.error("broken patch {!r}", patch_id)
-            raise InternalServerException
-        summary_patch = "".join(
-            # need a tailing new line to generate correct diff
-            difflib.unified_diff(
-                (patch.original_summary + "\n").splitlines(True),
-                (patch.summary + "\n").splitlines(True),
-                "summary",
-                "summary",
-            )
-        )
+    name_patch = __try_diff(patch_id, patch.original_name, patch.name, "name")
+    infobox_patch = __try_diff(patch_id, patch.original_infobox, patch.infobox, "infobox", n=5)
+    summary_patch = __try_diff(patch_id, patch.original_summary, patch.summary, "summary")
 
     reviewer = None
     if patch.state != PatchState.Pending:
@@ -80,6 +48,26 @@ async def get_patch(patch_id: uuid.UUID, request: Request) -> Template:
             "reviewer": reviewer,
             "submitter": submitter,
         },
+    )
+
+
+def __try_diff(
+    patch_id: uuid.UUID, before: str | None, after: str | None, name: str, **kwargs
+) -> str:
+    if after is None:
+        return ""
+    if before is None:
+        logger.error("broken patch {!r}", patch_id)
+        raise InternalServerException
+    return "".join(
+        # need a tailing new line to generate correct diff
+        difflib.unified_diff(
+            (before + "\n").splitlines(True),
+            (after + "\n").splitlines(True),
+            name,
+            name,
+            **kwargs,
+        )
     )
 
 
